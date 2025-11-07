@@ -1,0 +1,17 @@
+22a: A maior parte deles
+22b: Poucos deles
+22c: A maior parte deles
+22d: Nenhum deles
+22e: Poucos deles
+22f: A maior parte deles
+22g: Poucos deles
+22h: A maior parte deles
+23a: Concordo
+23b: Concordo
+23c: Concordo
+23d: Discordo
+23e: Discordo totalmente
+23f: Concordo totalmente
+23g: Discordo
+23h: Concordo
+23i: Concordo totalmente

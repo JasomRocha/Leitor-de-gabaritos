@@ -1,0 +1,10 @@
+16: I
+17: A
+18: Concordo
+19: A
+20: A
+21a: Mais de 2 horas
+21b: E12H
+21c: NU
+21d: E12H
+21e: Mais de 2 horas
