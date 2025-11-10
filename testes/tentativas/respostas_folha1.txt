@@ -1,0 +1,8 @@
+1: A
+2: F
+3: A
+4: A
+5a: Nao
+5b: Nao
+5c: Sim
+6: B

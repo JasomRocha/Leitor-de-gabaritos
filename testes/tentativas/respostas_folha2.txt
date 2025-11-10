@@ -1,0 +1,16 @@
+7a: Sim
+7b: Sim
+7c: Nao
+7d: Nao
+7e: Nao
+8: Discordo
+9: E
+10a: De vez em quando
+10b: Nunca ou quase nunca
+10c: Sempre ou quase sempre
+10d: De vez em quando
+10e: Sempre ou quase sempre
+10f: De vez em quando
+11a: Sim
+11b: Sim
+11c: Sim

@@ -1,0 +1,80 @@
+--- [FOLHA 1] ---
+1: B
+2: F
+3: A
+4: Discordo
+5a: Nao
+5b: Nao
+5c: Nao
+6: Concordo
+
+--- [FOLHA 2] ---
+7a: Sim
+7b: Sim
+7c: Nao
+7d: Nao
+7e: Sim
+8: Discordo
+9: Discordo
+10a: Nunca ou quase nunca
+10b: De vez em quando
+10c: Sempre ou quase sempre
+10d: Sempre ou quase sempre
+10e: Sempre ou quase sempre
+10f: Sempre ou quase sempre
+11a: Sim
+11b: Sim
+11c: Sim
+
+--- [FOLHA 3] ---
+12a: 1
+12b: 2
+12c: 2
+12d: 1
+12e: 2
+12f: 1
+12g: 2
+13a: Sim
+13b: Sim
+13c: Sim
+13d: Sim
+13e: Sim
+13f: Sim
+13g: Sim
+13h: Sim
+13i: Sim
+14: A
+15a: Nao
+15b: Nao
+
+--- [FOLHA 4] ---
+16: F
+17: B
+18: A
+19: A
+20: A
+21a: Menos de 1 hora
+21b: Não uso meu tempo pra isso
+21c: Mais de 2 horas
+21d: Não uso meu tempo pra isso
+21e: Mais de 2 horas
+
+--- [FOLHA 5] ---
+22a: A maior parte deles
+22b: Poucos deles
+22c: A maior parte deles
+22d: A maior parte deles
+22e: A maior parte deles
+22f: Todos eles
+22g: A maior parte deles
+22h: Nenhum deles
+23a: Concordo
+23b: Concordo
+23c: Concordo
+23d: Concordo
+23e: Concordo
+23f: Concordo
+23g: Concordo totalmente
+23h: Discordo
+23i: Discordo totalmente
+
