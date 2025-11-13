@@ -29,18 +29,18 @@ import java.io.File;
  */
 public class SaebDetector {
 
-    private static final String OPENCV_DLL_PATH = System.getProperty("opencv.dll.path", "C:\\Users\\jasom\\opencv\\build\\java\\x64\\opencv_java4120.dll");
-    
+    private static final String OPENCV_DLL_PATH = System.getProperty("opencv.dll.path", "C:\\Users\\Jasom\\Desktop\\gits\\Leitor-de-gabaritos\\lib\\opencv_java4100.dll");
+
     private static final String S = File.separator;
     private static final String PATH_CONFIG = "testes" + S + "config.txt";
     private static final String PATH_TEMPLATES = "testes" + S + "templates.txt";
     private static final String PATH_INPUT_DIR = "testes" + S + "entradas" + S + "entradas_novos_templates" + S;
     private static final String PATH_OUTPUT_DIR = "testes" + S + "saidas" + S + "saidas_qr" + S;
-    private static final String OUTPUT_TXT_FILE_ORGANIZED = "respostas_organizadas.txt"; 
+    private static final String OUTPUT_TXT_FILE_ORGANIZED = "respostas_organizadas.txt";
     private static final String OUTPUT_IMAGE_PREFIX = "resultado_";
     private static final String OUTPUT_FAIL_PREFIX = "falha_";
     private static final String OUTPUT_CROP_PREFIX = "recorte_";
-    
+
     // --- Parâmetros de Detecção de Âncora ---
     private static final int ANCHOR_SEARCH_SIZE = 100;
     private static final double ANCHOR_MIN_AREA = 320.0;
@@ -49,11 +49,11 @@ public class SaebDetector {
     private static final int ADAPTIVE_THRESH_BLOCK_SIZE = 15;
     private static final int ADAPTIVE_THRESH_C = 10;
     private static final double ANCHOR_ASPECT_TOLERANCE = 1.2; // Ajustado para tolerar inclinação/proporção
-    
+
     // --- Parâmetros de Detecção de Bolha ---
     private static final int BUBBLE_RADIUS = 10;
     private static final double RELATIVE_MARK_THRESHOLD = 25.0;
-    
+
     // --- Cores (para debug) ---
     private static final Scalar COLOR_GREEN = new Scalar(0, 255, 0);
     private static final Scalar COLOR_RED = new Scalar(0, 0, 255);
@@ -91,7 +91,7 @@ public class SaebDetector {
         }
         @Override
         public String toString() {
-            return "Instituicao: " + instituicao + ", Respondente: " + respondente + 
+            return "Instituicao: " + instituicao + ", Respondente: " + respondente +
                    ", Folha: " + folhaNome + ", Tipo: " + tipoProva + ", Ano: " + ano;
         }
         // Retorna a chave de ordenação: RESPONDENTE_FOLHA (ex: 0001_01)
@@ -133,30 +133,30 @@ public class SaebDetector {
             System.out.println("Nenhum arquivo de imagem encontrado em: " + PATH_INPUT_DIR);
             return;
         }
-        
+
         System.out.println("Encontrados " + arquivos.length + " arquivos de imagem para processar...");
 
         long totalProcessingTimeMs = 0;
         int processedCount = 0;
         long stepStartTime, stepEndTime;
-        
+
         Map<String, Map<String, String>> respostasPorRespondente = new TreeMap<>();
         Map<String, QrData> dadosQrPorRespondente = new TreeMap<>();
-        
+
         // Obtém o conjunto único de questões para o cabeçalho (em ordem)
         Set<String> todasAsQuestoes = todasAlternativas.stream()
             .map(a -> a.questao)
             .collect(Collectors.toCollection(LinkedHashSet::new));
-        
+
         // 3. Processa cada arquivo de imagem
         for (File arquivoImagem : arquivos) {
             System.out.println("\n➡ Processando " + arquivoImagem.getName());
-            long totalStartTime = System.nanoTime(); 
-            
+            long totalStartTime = System.nanoTime();
+
             Mat imagem = null;
             Mat recorte = null;
             Mat cinza = null;
-            
+
             try {
                 // --- 1. Carregar Imagem (Leitura de Disco) ---
                 stepStartTime = System.nanoTime();
@@ -167,7 +167,7 @@ public class SaebDetector {
                 }
                 stepEndTime = System.nanoTime();
                 System.out.println(String.format("  [TIMER] 1. Carregar Imagem:    %d ms", (stepEndTime - stepStartTime) / 1_000_000));
-                
+
                 // --- 2. Extrair QR Code ---
                 stepStartTime = System.nanoTime();
                 String qrDataBruta = extrairQRCodeDaImagemBruta(imagem);
@@ -180,14 +180,14 @@ public class SaebDetector {
 
                 if (dadosQR == null) {
                     System.err.println("  ⚠ ERRO FATAL: Não foi possível ler ou decodificar o QR Code.");
-                    continue; 
+                    continue;
                 }
-                
+
                 // --- 3. Puxar Configurações ---
                 String respondenteID = dadosQR.getRespondenteKey();
                 String folhaNome = dadosQR.folhaNome;
                 FolhaTemplate template = templates.get(folhaNome);
-                
+
                 if (template == null) {
                     System.err.println("  ⚠ ERRO FATAL: O QR Code indica '" + folhaNome + "', mas não há gabarito (template) para ela em templates.txt.");
                     continue;
@@ -199,7 +199,7 @@ public class SaebDetector {
                     System.err.println("  ⚠ ERRO FATAL: O QR Code indica '" + folhaNome + "', mas não há perguntas para ela em config.txt.");
                     continue;
                 }
-                
+
                 // --- 4. Detectar Âncoras e Alinhar ---
                 stepStartTime = System.nanoTime();
                 recorte = detectarETransformarAncoras(imagem, template, PATH_OUTPUT_DIR, folhaNome);
@@ -215,13 +215,13 @@ public class SaebDetector {
                 stepStartTime = System.nanoTime();
                 cinza = new Mat();
                 Imgproc.cvtColor(recorte, cinza, Imgproc.COLOR_BGR2GRAY);
-                Map<String, List<Alternativa>> porQuestao = new LinkedHashMap<>(); 
+                Map<String, List<Alternativa>> porQuestao = new LinkedHashMap<>();
                 for (Alternativa a : alternativasFolha) {
                     porQuestao.computeIfAbsent(a.questao, k -> new ArrayList<>()).add(a);
                 }
-                
+
                 Map<String, String> respostasDaFolha = new LinkedHashMap<>();
-                
+
                 for (String questao : porQuestao.keySet()) {
                     List<Alternativa> lista = porQuestao.get(questao);
                     List<Alternativa> marcadas = new ArrayList<>();
@@ -260,7 +260,7 @@ public class SaebDetector {
                         int larguraRecorte = Math.min(BUBBLE_RADIUS * 2, cinza.width() - x0);
                         int alturaRecorte = Math.min(BUBBLE_RADIUS * 2, cinza.height() - y0);
                         Scalar cor = marcadas.contains(alt) ? COLOR_GREEN : COLOR_RED;
-                        
+
                         // **Aqui é onde as coordenadas alt.x e alt.y (ideais) são plotadas na imagem recortada (recorte)**
                         Imgproc.rectangle(recorte, new Point(x0, y0), new Point(x0 + larguraRecorte, y0 + alturaRecorte), cor, 2);
                     }
@@ -268,36 +268,36 @@ public class SaebDetector {
                     if (marcadas.isEmpty()) respostaFinal = "";
                     else if (marcadas.size() > 1) respostaFinal = "?";
                     else respostaFinal = traduzAlternativa(marcadas.get(0).opcao);
-                    
+
                     // Armazena a resposta no mapa desta folha
                     respostasDaFolha.put(questao, respostaFinal);
                 }
-                                        
-                respostasPorRespondente.computeIfAbsent(respondenteID, k -> new LinkedHashMap<>()).putAll(respostasDaFolha); 
+
+                respostasPorRespondente.computeIfAbsent(respondenteID, k -> new LinkedHashMap<>()).putAll(respostasDaFolha);
                 dadosQrPorRespondente.putIfAbsent(respondenteID, dadosQR);
-                
+
                 stepEndTime = System.nanoTime();
                 System.out.println(String.format("  [TIMER] 4. Ler Bolhas (OMR):    %d ms", (stepEndTime - stepStartTime) / 1_000_000));
-                
+
                 // --- 6. Salva o resultado visual (Escrita de Disco OBRIGATÓRIA) ---
                 stepStartTime = System.nanoTime();
                 String nomeArquivoSaida = OUTPUT_IMAGE_PREFIX + respondenteID + "_" + folhaNome.replace(" ", "") + ".jpg";
                 Imgcodecs.imwrite(PATH_OUTPUT_DIR + nomeArquivoSaida, recorte);
-                
+
                 stepEndTime = System.nanoTime();
                 System.out.println(String.format("  [TIMER] 5. Salvar Saídas:      %d ms", (stepEndTime - stepStartTime) / 1_000_000));
-                
+
                 String vetorRespostas = respostasDaFolha.values().stream().collect(Collectors.joining(","));
                 System.out.println("  ✓ Respostas lidas: " + vetorRespostas);
-                
+
                 // --- 7. Tempo Total da Folha ---
                 long totalEndTime = System.nanoTime();
                 long totalDurationMs = (totalEndTime - totalStartTime) / 1_000_000;
                 System.out.println(String.format("  ⏱️ --- Tempo Total da Folha: %d ms ---", totalDurationMs));
-                
+
                 totalProcessingTimeMs += totalDurationMs;
                 processedCount++;
-            
+
             } catch (Exception e) {
                 System.err.println("  Erro inesperado ao processar folha: " + arquivoImagem.getName() + " - " + e.getMessage());
             } finally {
@@ -305,53 +305,53 @@ public class SaebDetector {
                 if (recorte != null) recorte.release();
                 if (cinza != null) cinza.release();
             }
-        } 
-        
+        }
+
         // --------------------------------------------------------------------------------
         // 🔹 ETAPA FINAL: CONCATENAR E ESCREVER O ARQUIVO TXT (UMA LINHA POR RESPONDENTE)
         // --------------------------------------------------------------------------------
-        
+
         System.out.println("\n\n--- Gerando arquivo de respostas organizado (" + OUTPUT_TXT_FILE_ORGANIZED + ") ---");
         String caminhoTXT = PATH_OUTPUT_DIR + OUTPUT_TXT_FILE_ORGANIZED;
-        
+
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(caminhoTXT, false))) {
-            
+
             // 1. Constrói o Cabeçalho Único
-            StringBuilder header = new StringBuilder();           
+            StringBuilder header = new StringBuilder();
             header.append("id_instituicao,id_respondente");
             for (String questao : todasAsQuestoes) {
                 header.append(",").append(questao);
             }
             bw.write(header.toString());
             bw.newLine();
-            
+
             // 2. Itera sobre os respondentes ordenados (pelo ID do respondente)
             for (Map.Entry<String, Map<String, String>> entry : respostasPorRespondente.entrySet()) {
-                
+
                 String respondenteID = entry.getKey();
                 Map<String, String> respostasTotais = entry.getValue();
                 QrData dadosQRRef = dadosQrPorRespondente.get(respondenteID);
-                
+
                 // Inicializa a linha de dados
                 StringBuilder dataLine = new StringBuilder();
-                                    
+
                 dataLine.append(dadosQRRef != null ? dadosQRRef.instituicao : "N/A").append(",");
                 dataLine.append(respondenteID);
-                
+
                 // Adiciona as respostas, na ordem do cabeçalho
                 for (String questao : todasAsQuestoes) {
                     // Se a questão não foi encontrada em nenhuma das folhas do respondente (improvável se o config estiver certo), retorna ""
-                    dataLine.append(",").append(respostasTotais.getOrDefault(questao, "")); 
+                    dataLine.append(",").append(respostasTotais.getOrDefault(questao, ""));
                 }
-                
+
                 bw.write(dataLine.toString());
                 bw.newLine();
             }
-            
+
         } catch (IOException e) {
             System.err.println("Erro ao salvar respostas organizadas: " + e.getMessage());
         }
-                  
+
         // --- 8. Imprime a Média Final ---
         if (processedCount > 0) {
             long averageTime = totalProcessingTimeMs / processedCount;
@@ -364,15 +364,15 @@ public class SaebDetector {
         } else {
             System.out.println("\nProcessamento concluído. Nenhuma folha foi processada.");
         }
-        
+
         templates.values().forEach(FolhaTemplate::release);
     }
-    
+
     // --- FUNÇÕES AUXILIARES ---
 
     private static String extrairQRCodeDaImagemBruta(Mat image) {
         System.out.println("  🔎 Tentando localizar QR Code na imagem bruta no canto **Inferior Direito**...");
-        
+
         // Parâmetros de busca
         final int QR_SEARCH_SIZE = 250;
         final int QR_EXTRA_MARGIN = 20;
@@ -380,41 +380,41 @@ public class SaebDetector {
         final int h_recorte = QR_SEARCH_SIZE + QR_EXTRA_MARGIN;
 
         // --- CÁLCULO PARA O CANTO INFERIOR DIREITO (Bottom-Right) ---
-        int x = Math.max(image.width() - w_recorte, 0); 
+        int x = Math.max(image.width() - w_recorte, 0);
         int y = Math.max(image.height() - h_recorte, 0); // Inicia em y = altura - h_recorte
-        
+
         // Garante que o recorte não exceda os limites da imagem
         int w = Math.min(w_recorte, image.width() - x);
         int h = Math.min(h_recorte, image.height() - y);
-        
+
         Rect rect = new Rect(x, y, w, h);
-        
+
         Mat qrRecortado = null;
         Mat enlarged = null;
         Mat gray = null;
         Mat thresholded = null; // Adicionado binarização
         MatOfByte mob = new MatOfByte();
-        
+
         try {
             // 1. Recorta a ROI
             qrRecortado = new Mat(image, rect);
-            
+
             // 2. Amplia 5x o QR para melhorar leitura
             enlarged = new Mat();
             Imgproc.resize(qrRecortado, enlarged,
                     new Size(qrRecortado.width() * 5, qrRecortado.height() * 5),
                     0, 0, Imgproc.INTER_CUBIC);
-            
+
             // 3. Converte para escala de cinza e aplica Gaussian Blur
             gray = new Mat();
             Imgproc.cvtColor(enlarged, gray, Imgproc.COLOR_BGR2GRAY);
             Imgproc.GaussianBlur(gray, gray, new Size(3, 3), 0);
-            
+
             // 4. Binarização OBRIGATÓRIA para Leitores
             thresholded = new Mat();
             // Limiarização simples + Otsu
             Imgproc.threshold(gray, thresholded, 150, 255, Imgproc.THRESH_BINARY | Imgproc.THRESH_OTSU);
-            
+
             // 5. Tenta decodificar o QR (usando a imagem binarizada)
             Imgcodecs.imencode(".png", thresholded, mob);
             InputStream is = new ByteArrayInputStream(mob.toArray());
@@ -423,7 +423,7 @@ public class SaebDetector {
             LuminanceSource source = new BufferedImageLuminanceSource(bufferedImage);
             BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
             Result result = new MultiFormatReader().decode(bitmap);
-            
+
             System.out.println("  ✅ QR Code detectado no canto Inferior Direito!");
             return result.getText();
 
@@ -436,19 +436,19 @@ public class SaebDetector {
             if (qrRecortado != null) qrRecortado.release();
             if (enlarged != null) enlarged.release();
             if (gray != null) gray.release();
-            if (thresholded != null) thresholded.release(); 
+            if (thresholded != null) thresholded.release();
             if (mob != null) mob.release();
         }
-        
-        return null; 
+
+        return null;
     }
 
     private static QrData parseQrCode(String qrTexto) {
-        if (qrTexto == null || qrTexto.length() < 16) { 
+        if (qrTexto == null || qrTexto.length() < 16) {
             System.err.println("  ⚠ Erro de QR Code: texto é nulo ou curto. ('" + qrTexto + "')");
             return null;
         }
-        try {          
+        try {
             // Assume o formato do seu código: IIIII RRRR FF T AAAA (16 caracteres)
             String instituicao = qrTexto.substring(0, 5); // 5 caracteres (0 a 4)
             String respondente = qrTexto.substring(5, 9); // 4 caracteres (5 a 8)
@@ -456,7 +456,7 @@ public class SaebDetector {
             String folhaNome = "FOLHA " + Integer.parseInt(folhaNumStr);
             String tipoProva = qrTexto.substring(11, 12); // 1 caractere (11)
             String ano = qrTexto.substring(12, 16); // 4 caracteres (12 a 15)
-            
+
             QrData dados = new QrData(instituicao, respondente, folhaNome, tipoProva, ano, qrTexto);
             System.out.println("  ✓ QR Code decodificado: " + dados);
             return dados;
@@ -466,7 +466,7 @@ public class SaebDetector {
             return null;
         }
     }
-    
+
     /**
      * Detecta as âncoras (marcadores de alinhamento) nas 4 pontas da imagem.
      * @param imagem A imagem original.
@@ -487,15 +487,15 @@ public class SaebDetector {
                 new Rect(0, altura - h, w, h),  // 2: Inferior Esquerdo
                 new Rect(largura - w, altura - h, w, h) // 3: Inferior Direito
         };
-        
+
         String[] regionNames = {"Superior Esquerdo", "Superior Direito", "Inferior Esquerdo", "Inferior Direito"};
         List<Rect> ancorasRects = new ArrayList<>();
 
         for (int i = 0; i < regioes.length; i++) {
             Rect roi = regioes[i];
             String regionName = regionNames[i];
-            
-            Mat regiao = new Mat(imagem, roi);  
+
+            Mat regiao = new Mat(imagem, roi);
             Mat gray = new Mat();
             Mat thresh = new Mat();
             Mat hierarchy = new Mat();
@@ -505,21 +505,21 @@ public class SaebDetector {
             // Binarização adaptativa: tenta separar o marcador preto do fundo branco/cinza
             Imgproc.adaptiveThreshold(gray, thresh, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C,
                     Imgproc.THRESH_BINARY_INV, ADAPTIVE_THRESH_BLOCK_SIZE, ADAPTIVE_THRESH_C);
-            
+
             // --- DEBUG 1: Salva a imagem binarizada da região ---
             Imgcodecs.imwrite(outputDir + "DEBUG_ANCHOR_TH_" + regionName.replace(" ", "_") + "_" + arquivoBase + ".jpg", thresh);
-            
+
             Imgproc.findContours(thresh.clone(), contornos, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-            
+
             // Cria uma imagem colorida de debug para desenhar todos os contornos
             Mat debugContornos = new Mat(regiao.size(), regiao.type(), new Scalar(255, 255, 255));
             Imgproc.drawContours(debugContornos, contornos, -1, COLOR_CONTOUR, 1);
-            
+
             Rect melhorCaixa = null;
             double maxAreaEncontrada = 0;
-            
+
             System.out.println("    [DEBUG] Região " + regionName + ": " + contornos.size() + " contornos iniciais.");
-            
+
             for (MatOfPoint contorno : contornos) {
                 double area = Imgproc.contourArea(contorno);
                 if (area < ANCHOR_MIN_AREA) {
@@ -537,20 +537,20 @@ public class SaebDetector {
                 MatOfPoint2f aprox = new MatOfPoint2f();
                 double perimetro = Imgproc.arcLength(contorno2f, true);
                 Imgproc.approxPolyDP(contorno2f, aprox, ANCHOR_APPROX_EPSILON * perimetro, true);
-                
+
                 if (aprox.total() == 4) {
                     MatOfPoint aproxPt = new MatOfPoint(aprox.toArray());
                     Rect caixa = Imgproc.boundingRect(aproxPt);
-                    double aspect = (caixa.width > caixa.height) ? 
-                                             (double)caixa.width / caixa.height : 
+                    double aspect = (caixa.width > caixa.height) ?
+                                             (double)caixa.width / caixa.height :
                                              (double)caixa.height / caixa.width;
-                                             
+
                     if (aspect > ANCHOR_ASPECT_TOLERANCE) {
                         // System.out.println("      - Rejeitado por Aspect Ratio (" + String.format("%.2f", aspect) + ")");
                         aproxPt.release(); contorno.release(); contorno2f.release(); aprox.release();
                         continue;
                     }
-                    
+
                     if (area > maxAreaEncontrada) {
                         maxAreaEncontrada = area;
                         caixa.x += roi.x;  // Adiciona o offset da ROI
@@ -563,7 +563,7 @@ public class SaebDetector {
                 }
                 contorno.release(); contorno2f.release(); aprox.release();
             }
-            
+
             // --- DEBUG 2: Salva a imagem com todos os contornos encontrados (antes dos filtros) ---
             Imgcodecs.imwrite(outputDir + "DEBUG_ANCHOR_ALL_CONTOURS_" + regionName.replace(" ", "_") + "_" + arquivoBase + ".jpg", debugContornos);
             debugContornos.release();
@@ -573,17 +573,17 @@ public class SaebDetector {
                 System.out.println("    ✅ Encontrada âncora (" + regionName + ")! Área: " + String.format("%.1f", maxAreaEncontrada));
                 ancorasRects.add(melhorCaixa);
                 // Desenha a âncora final na imagem original (para o DEBUG 3)
-                Imgproc.rectangle(imagem, new Point(melhorCaixa.x, melhorCaixa.y), 
-                                           new Point(melhorCaixa.x + melhorCaixa.width, melhorCaixa.y + melhorCaixa.height), 
+                Imgproc.rectangle(imagem, new Point(melhorCaixa.x, melhorCaixa.y),
+                                           new Point(melhorCaixa.x + melhorCaixa.width, melhorCaixa.y + melhorCaixa.height),
                                            COLOR_BLUE, 3);
             } else {
                  System.out.println("    ❌ Nenhuma âncora válida encontrada na região (" + regionName + ").");
             }
-            
+
             // Libera recursos locais
             regiao.release(); gray.release(); thresh.release(); hierarchy.release();
         }
-        
+
         System.out.println("  🏁 Detecção de âncoras finalizada. Total: " + ancorasRects.size());
         if (ancorasRects.size() != 4) {
             System.err.println("  ⚠ ERRO FATAL: não foram encontradas 4 âncoras.");
@@ -594,7 +594,7 @@ public class SaebDetector {
 
         // ----------------------------------------------------------------------
         // 🚀 CORREÇÃO DA ORDENAÇÃO DE PONTOS
-        // A ordenação robusta garante que os pontos sejam passados para a transformação 
+        // A ordenação robusta garante que os pontos sejam passados para a transformação
         // na ordem correta (TL, TR, BL, BR), o que corrige o desalinhamento.
         // ----------------------------------------------------------------------
         List<Point> srcPointsList = new ArrayList<>();
@@ -634,15 +634,15 @@ public class SaebDetector {
         Size warpedSize = template.idealSize;
         Scalar fillColor = new Scalar(245, 245, 245);
         Imgproc.warpPerspective(imagem, warpedImage, M, warpedSize, Imgproc.INTER_LINEAR, Core.BORDER_CONSTANT, fillColor);
-        
+
         Imgcodecs.imwrite(outputDir + OUTPUT_CROP_PREFIX + folha + ".jpg", warpedImage);
         System.out.println("  ✓ Imagem desentortada e salva.");
         src_points.release();
         M.release();
         return warpedImage;
     }
-    
-    
+
+
     private static Map<String, FolhaTemplate> lerTemplates(String caminhoTemplates) {
         Map<String, FolhaTemplate> templates = new HashMap<>();
         String folhaAtual = null;
@@ -685,8 +685,8 @@ public class SaebDetector {
         }
         return templates;
     }
-    
-    
+
+
     private static List<Alternativa> lerConfiguracao(String caminhoConfig) {
         List<Alternativa> lista = new ArrayList<>();
         String folhaAtual = "Desconhecida";

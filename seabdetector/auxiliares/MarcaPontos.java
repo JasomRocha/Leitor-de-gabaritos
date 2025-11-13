@@ -17,9 +17,9 @@ import org.opencv.objdetect.QRCodeDetector;
 
 
 public class MarcaPontos {
-    static { System.load("C:\\Users\\jasom\\opencv\\build\\java\\x64\\opencv_java4120.dll"); }
+    static { System.load("C:\\Users\\Jasom\\Desktop\\gits\\Leitor-de-gabaritos\\lib\\opencv_java4100.dll"); }
     public static void main(String[] args) {
-        String caminho = "C:/Users/jasom/opencv/testes/entradas/entradas_novos_templates/entrada_folha1.jpg";
+        String caminho = "C:\\Users\\Jasom\\Desktop\\gits\\Leitor-de-gabaritos\\testes\\entradas\\entrada_folha1.jpg";
         Mat img = Imgcodecs.imread(caminho);
 
         if (img.empty()) {
