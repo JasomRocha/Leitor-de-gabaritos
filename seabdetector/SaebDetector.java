@@ -42,13 +42,13 @@ public class SaebDetector {
     private static final String OUTPUT_CROP_PREFIX = "recorte_";
     
     // --- Parâmetros de Detecção de Âncora ---
-    private static final int ANCHOR_SEARCH_SIZE = 200;
-    private static final double ANCHOR_MIN_AREA = 300.0;
+    private static final int ANCHOR_SEARCH_SIZE = 100;
+    private static final double ANCHOR_MIN_AREA = 345.0;
     private static final double ANCHOR_MAX_AREA = 5000.0;
     private static final double ANCHOR_APPROX_EPSILON = 0.06; // Ajustado para tolerar disformidade
     private static final int ADAPTIVE_THRESH_BLOCK_SIZE = 15;
     private static final int ADAPTIVE_THRESH_C = 10;
-    private static final double ANCHOR_ASPECT_TOLERANCE = 1.5; // Ajustado para tolerar inclinação/proporção
+    private static final double ANCHOR_ASPECT_TOLERANCE = 1.2; // Ajustado para tolerar inclinação/proporção
     
     // --- Parâmetros de Detecção de Bolha ---
     private static final int BUBBLE_RADIUS = 10;
