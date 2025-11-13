@@ -43,7 +43,7 @@ public class SaebDetector {
     
     // --- Parâmetros de Detecção de Âncora ---
     private static final int ANCHOR_SEARCH_SIZE = 100;
-    private static final double ANCHOR_MIN_AREA = 345.0;
+    private static final double ANCHOR_MIN_AREA = 320.0;
     private static final double ANCHOR_MAX_AREA = 5000.0;
     private static final double ANCHOR_APPROX_EPSILON = 0.06; // Ajustado para tolerar disformidade
     private static final int ADAPTIVE_THRESH_BLOCK_SIZE = 15;
