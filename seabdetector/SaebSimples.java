@@ -15,7 +15,7 @@ public class SaebSimples {
     private static final String OPENCV_DLL_PATH = "C:\\Users\\jasom\\opencv\\build\\java\\x64\\opencv_java4120.dll";
     private static final String PATH_CONFIG = "testes\\config.txt";
     private static final String PATH_TEMPLATES = "testes\\templates.txt";
-    private static final String PATH_INPUT_DIR = "testes\\entradas\\entradas_problematicas\\";
+    private static final String PATH_INPUT_DIR = "testes\\entradas\\entradas_novos_templates\\";
     private static final String PATH_OUTPUT_DIR = "testes\\saidas\\saidas simples\\";
     private static final String OUTPUT_TXT_FILE_ORGANIZED = "respostas_organizadas_teste.txt"; 
 

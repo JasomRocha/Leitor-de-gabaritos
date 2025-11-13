@@ -34,7 +34,7 @@ public class SaebDetector {
     private static final String S = File.separator;
     private static final String PATH_CONFIG = "testes" + S + "config.txt";
     private static final String PATH_TEMPLATES = "testes" + S + "templates.txt";
-    private static final String PATH_INPUT_DIR = "testes" + S + "entradas" + S + "entradas_qr" + S;
+    private static final String PATH_INPUT_DIR = "testes" + S + "entradas" + S + "entradas_novos_templates" + S;
     private static final String PATH_OUTPUT_DIR = "testes" + S + "saidas" + S + "saidas_qr" + S;
     private static final String OUTPUT_TXT_FILE_ORGANIZED = "respostas_organizadas.txt"; 
     private static final String OUTPUT_IMAGE_PREFIX = "resultado_";
@@ -45,10 +45,10 @@ public class SaebDetector {
     private static final int ANCHOR_SEARCH_SIZE = 200;
     private static final double ANCHOR_MIN_AREA = 300.0;
     private static final double ANCHOR_MAX_AREA = 5000.0;
-    private static final double ANCHOR_APPROX_EPSILON = 0.02;
+    private static final double ANCHOR_APPROX_EPSILON = 0.06; // Ajustado para tolerar disformidade
     private static final int ADAPTIVE_THRESH_BLOCK_SIZE = 15;
     private static final int ADAPTIVE_THRESH_C = 10;
-    private static final double ANCHOR_ASPECT_TOLERANCE = 1.2;
+    private static final double ANCHOR_ASPECT_TOLERANCE = 1.5; // Ajustado para tolerar inclinação/proporção
     
     // --- Parâmetros de Detecção de Bolha ---
     private static final int BUBBLE_RADIUS = 10;
@@ -58,6 +58,7 @@ public class SaebDetector {
     private static final Scalar COLOR_GREEN = new Scalar(0, 255, 0);
     private static final Scalar COLOR_RED = new Scalar(0, 0, 255);
     private static final Scalar COLOR_BLUE = new Scalar(255, 0, 0);
+    private static final Scalar COLOR_CONTOUR = new Scalar(0, 0, 255); // Vermelho para contornos detectados
 
     static {
         System.load(OPENCV_DLL_PATH);
@@ -259,6 +260,8 @@ public class SaebDetector {
                         int larguraRecorte = Math.min(BUBBLE_RADIUS * 2, cinza.width() - x0);
                         int alturaRecorte = Math.min(BUBBLE_RADIUS * 2, cinza.height() - y0);
                         Scalar cor = marcadas.contains(alt) ? COLOR_GREEN : COLOR_RED;
+                        
+                        // **Aqui é onde as coordenadas alt.x e alt.y (ideais) são plotadas na imagem recortada (recorte)**
                         Imgproc.rectangle(recorte, new Point(x0, y0), new Point(x0 + larguraRecorte, y0 + alturaRecorte), cor, 2);
                     }
                     String respostaFinal;
@@ -269,8 +272,8 @@ public class SaebDetector {
                     // Armazena a resposta no mapa desta folha
                     respostasDaFolha.put(questao, respostaFinal);
                 }
-                                
-                respostasPorRespondente.computeIfAbsent(respondenteID, k -> new LinkedHashMap<>()).putAll(respostasDaFolha);               
+                                        
+                respostasPorRespondente.computeIfAbsent(respondenteID, k -> new LinkedHashMap<>()).putAll(respostasDaFolha); 
                 dadosQrPorRespondente.putIfAbsent(respondenteID, dadosQR);
                 
                 stepEndTime = System.nanoTime();
@@ -331,7 +334,7 @@ public class SaebDetector {
                 
                 // Inicializa a linha de dados
                 StringBuilder dataLine = new StringBuilder();
-                              
+                                    
                 dataLine.append(dadosQRRef != null ? dadosQRRef.instituicao : "N/A").append(",");
                 dataLine.append(respondenteID);
                 
@@ -368,67 +371,91 @@ public class SaebDetector {
     // --- FUNÇÕES AUXILIARES ---
 
     private static String extrairQRCodeDaImagemBruta(Mat image) {
-        System.out.println("  🔎 Tentando localizar QR Code na imagem bruta...");
-        int[] tamanhos = {250, 150}; 
-        int margemExtra = 20;
+        System.out.println("  🔎 Tentando localizar QR Code na imagem bruta no canto **Inferior Direito**...");
         
-        for (int recorteLado : tamanhos) {
-            int x = Math.max((int) image.width() - recorteLado - margemExtra, 0);
-            int y = 0;
-            int w = Math.min(recorteLado + margemExtra, image.width() - x);
-            int h = Math.min(recorteLado + margemExtra, image.height() - y);
-            Rect rect = new Rect(x, y, w, h);
-            Mat qrRecortado = null;
-            Mat enlarged = null;
-            Mat gray = null;
-            MatOfByte mob = new MatOfByte();
-            
-            try {
-                qrRecortado = new Mat(image, rect);
-                enlarged = new Mat();
-                Imgproc.resize(qrRecortado, enlarged,
-                        new Size(qrRecortado.width() * 5, qrRecortado.height() * 5),
-                        0, 0, Imgproc.INTER_CUBIC);
-                gray = new Mat();
-                Imgproc.cvtColor(enlarged, gray, Imgproc.COLOR_BGR2GRAY);
-                Imgproc.GaussianBlur(gray, gray, new Size(3, 3), 0);
-                Imgcodecs.imencode(".png", gray, mob);
-                InputStream is = new ByteArrayInputStream(mob.toArray());
-                BufferedImage bufferedImage = ImageIO.read(is);
-                is.close();
-                LuminanceSource source = new BufferedImageLuminanceSource(bufferedImage);
-                BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
-                Result result = new MultiFormatReader().decode(bitmap);
-                
-                System.out.println("  ✅ QR Code detectado com recorte de " + recorteLado + "px!");
-                return result.getText();
+        // Parâmetros de busca
+        final int QR_SEARCH_SIZE = 250;
+        final int QR_EXTRA_MARGIN = 20;
+        final int w_recorte = QR_SEARCH_SIZE + QR_EXTRA_MARGIN;
+        final int h_recorte = QR_SEARCH_SIZE + QR_EXTRA_MARGIN;
 
-            } catch (NotFoundException e) {
-                System.out.println("    ...Nenhum QR encontrado no recorte de " + recorteLado + "px.");
-            } catch (Exception e) {
-                System.err.println("    ❌ Erro (Exception) ao ler QR Code: " + e.getMessage());
-            } finally {
-                if (qrRecortado != null) qrRecortado.release();
-                if (enlarged != null) enlarged.release();
-                if (gray != null) gray.release();
-                if (mob != null) mob.release();
-            }
+        // --- CÁLCULO PARA O CANTO INFERIOR DIREITO (Bottom-Right) ---
+        int x = Math.max(image.width() - w_recorte, 0); 
+        int y = Math.max(image.height() - h_recorte, 0); // Inicia em y = altura - h_recorte
+        
+        // Garante que o recorte não exceda os limites da imagem
+        int w = Math.min(w_recorte, image.width() - x);
+        int h = Math.min(h_recorte, image.height() - y);
+        
+        Rect rect = new Rect(x, y, w, h);
+        
+        Mat qrRecortado = null;
+        Mat enlarged = null;
+        Mat gray = null;
+        Mat thresholded = null; // Adicionado binarização
+        MatOfByte mob = new MatOfByte();
+        
+        try {
+            // 1. Recorta a ROI
+            qrRecortado = new Mat(image, rect);
+            
+            // 2. Amplia 5x o QR para melhorar leitura
+            enlarged = new Mat();
+            Imgproc.resize(qrRecortado, enlarged,
+                    new Size(qrRecortado.width() * 5, qrRecortado.height() * 5),
+                    0, 0, Imgproc.INTER_CUBIC);
+            
+            // 3. Converte para escala de cinza e aplica Gaussian Blur
+            gray = new Mat();
+            Imgproc.cvtColor(enlarged, gray, Imgproc.COLOR_BGR2GRAY);
+            Imgproc.GaussianBlur(gray, gray, new Size(3, 3), 0);
+            
+            // 4. Binarização OBRIGATÓRIA para Leitores
+            thresholded = new Mat();
+            // Limiarização simples + Otsu
+            Imgproc.threshold(gray, thresholded, 150, 255, Imgproc.THRESH_BINARY | Imgproc.THRESH_OTSU);
+            
+            // 5. Tenta decodificar o QR (usando a imagem binarizada)
+            Imgcodecs.imencode(".png", thresholded, mob);
+            InputStream is = new ByteArrayInputStream(mob.toArray());
+            BufferedImage bufferedImage = ImageIO.read(is);
+            is.close();
+            LuminanceSource source = new BufferedImageLuminanceSource(bufferedImage);
+            BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+            Result result = new MultiFormatReader().decode(bitmap);
+            
+            System.out.println("  ✅ QR Code detectado no canto Inferior Direito!");
+            return result.getText();
+
+        } catch (NotFoundException e) {
+            System.out.println("    ...Nenhum QR encontrado no recorte inferior direito.");
+        } catch (Exception e) {
+            System.err.println("    ❌ Erro (Exception) ao ler QR Code: " + e.getMessage());
+        } finally {
+            // Liberação de recursos
+            if (qrRecortado != null) qrRecortado.release();
+            if (enlarged != null) enlarged.release();
+            if (gray != null) gray.release();
+            if (thresholded != null) thresholded.release(); 
+            if (mob != null) mob.release();
         }
+        
         return null; 
     }
 
     private static QrData parseQrCode(String qrTexto) {
-        if (qrTexto == null || qrTexto.length() < 12) {  
+        if (qrTexto == null || qrTexto.length() < 16) { 
             System.err.println("  ⚠ Erro de QR Code: texto é nulo ou curto. ('" + qrTexto + "')");
             return null;
         }
         try {          
-            String instituicao = qrTexto.substring(0, 5);
-            String respondente = qrTexto.substring(5, 9);
-            String folhaNumStr = qrTexto.substring(9, 11);
+            // Assume o formato do seu código: IIIII RRRR FF T AAAA (16 caracteres)
+            String instituicao = qrTexto.substring(0, 5); // 5 caracteres (0 a 4)
+            String respondente = qrTexto.substring(5, 9); // 4 caracteres (5 a 8)
+            String folhaNumStr = qrTexto.substring(9, 11); // 2 caracteres (9 a 10)
             String folhaNome = "FOLHA " + Integer.parseInt(folhaNumStr);
-            String tipoProva = qrTexto.substring(11, 12);
-            String ano = qrTexto.substring(12, 16);
+            String tipoProva = qrTexto.substring(11, 12); // 1 caractere (11)
+            String ano = qrTexto.substring(12, 16); // 4 caracteres (12 a 15)
             
             QrData dados = new QrData(instituicao, respondente, folhaNome, tipoProva, ano, qrTexto);
             System.out.println("  ✓ QR Code decodificado: " + dados);
@@ -440,16 +467,25 @@ public class SaebDetector {
         }
     }
     
+    /**
+     * Detecta as âncoras (marcadores de alinhamento) nas 4 pontas da imagem.
+     * @param imagem A imagem original.
+     * @param template O template com as dimensões e pontos ideais.
+     * @param outputDir O diretório para salvar imagens de debug e resultado.
+     * @param folha Nome da folha para nomear arquivos de saída.
+     * @return Mat da imagem alinhada, ou null se falhar.
+     */
     private static Mat detectarETransformarAncoras(Mat imagem, FolhaTemplate template, String outputDir, String folha) {
         int largura = imagem.cols();
         int altura = imagem.rows();
         int w = ANCHOR_SEARCH_SIZE, h = ANCHOR_SEARCH_SIZE;
+        String arquivoBase = folha.replace(" ", "");
 
         Rect[] regioes = new Rect[]{
-                new Rect(0, 0, w, h), 
-                new Rect(largura - w, 0, w, h), 
-                new Rect(0, altura - h, w, h), 
-                new Rect(largura - w, altura - h, w, h)
+                new Rect(0, 0, w, h),           // 0: Superior Esquerdo
+                new Rect(largura - w, 0, w, h), // 1: Superior Direito
+                new Rect(0, altura - h, w, h),  // 2: Inferior Esquerdo
+                new Rect(largura - w, altura - h, w, h) // 3: Inferior Direito
         };
         
         String[] regionNames = {"Superior Esquerdo", "Superior Direito", "Inferior Esquerdo", "Inferior Direito"};
@@ -466,20 +502,37 @@ public class SaebDetector {
             List<MatOfPoint> contornos = new ArrayList<>();
 
             Imgproc.cvtColor(regiao, gray, Imgproc.COLOR_BGR2GRAY);
+            // Binarização adaptativa: tenta separar o marcador preto do fundo branco/cinza
             Imgproc.adaptiveThreshold(gray, thresh, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C,
                     Imgproc.THRESH_BINARY_INV, ADAPTIVE_THRESH_BLOCK_SIZE, ADAPTIVE_THRESH_C);
             
+            // --- DEBUG 1: Salva a imagem binarizada da região ---
+            Imgcodecs.imwrite(outputDir + "DEBUG_ANCHOR_TH_" + regionName.replace(" ", "_") + "_" + arquivoBase + ".jpg", thresh);
+            
             Imgproc.findContours(thresh.clone(), contornos, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+            
+            // Cria uma imagem colorida de debug para desenhar todos os contornos
+            Mat debugContornos = new Mat(regiao.size(), regiao.type(), new Scalar(255, 255, 255));
+            Imgproc.drawContours(debugContornos, contornos, -1, COLOR_CONTOUR, 1);
             
             Rect melhorCaixa = null;
             double maxAreaEncontrada = 0;
             
+            System.out.println("    [DEBUG] Região " + regionName + ": " + contornos.size() + " contornos iniciais.");
+            
             for (MatOfPoint contorno : contornos) {
                 double area = Imgproc.contourArea(contorno);
-                if (area < ANCHOR_MIN_AREA || area > ANCHOR_MAX_AREA) {
+                if (area < ANCHOR_MIN_AREA) {
+                    // System.out.println("      - Área muito pequena: " + String.format("%.1f", area));
                     contorno.release();
                     continue;
                 }
+                if (area > ANCHOR_MAX_AREA) {
+                    // System.out.println("      - Área muito grande: " + String.format("%.1f", area));
+                    contorno.release();
+                    continue;
+                }
+
                 MatOfPoint2f contorno2f = new MatOfPoint2f(contorno.toArray());
                 MatOfPoint2f aprox = new MatOfPoint2f();
                 double perimetro = Imgproc.arcLength(contorno2f, true);
@@ -489,55 +542,92 @@ public class SaebDetector {
                     MatOfPoint aproxPt = new MatOfPoint(aprox.toArray());
                     Rect caixa = Imgproc.boundingRect(aproxPt);
                     double aspect = (caixa.width > caixa.height) ? 
-                                     (double)caixa.width / caixa.height : 
-                                     (double)caixa.height / caixa.width;
-                                         
+                                             (double)caixa.width / caixa.height : 
+                                             (double)caixa.height / caixa.width;
+                                             
                     if (aspect > ANCHOR_ASPECT_TOLERANCE) {
+                        // System.out.println("      - Rejeitado por Aspect Ratio (" + String.format("%.2f", aspect) + ")");
                         aproxPt.release(); contorno.release(); contorno2f.release(); aprox.release();
                         continue;
                     }
                     
                     if (area > maxAreaEncontrada) {
                         maxAreaEncontrada = area;
-                        caixa.x += roi.x;  
+                        caixa.x += roi.x;  // Adiciona o offset da ROI
                         caixa.y += roi.y;
                         melhorCaixa = caixa;
                     }
                     aproxPt.release();
+                } else {
+                    // System.out.println("      - Rejeitado: Não é um quadrilátero (lados: " + aprox.total() + ")");
                 }
                 contorno.release(); contorno2f.release(); aprox.release();
             }
             
+            // --- DEBUG 2: Salva a imagem com todos os contornos encontrados (antes dos filtros) ---
+            Imgcodecs.imwrite(outputDir + "DEBUG_ANCHOR_ALL_CONTOURS_" + regionName.replace(" ", "_") + "_" + arquivoBase + ".jpg", debugContornos);
+            debugContornos.release();
+
+
             if (melhorCaixa != null) {
                 System.out.println("    ✅ Encontrada âncora (" + regionName + ")! Área: " + String.format("%.1f", maxAreaEncontrada));
                 ancorasRects.add(melhorCaixa);
+                // Desenha a âncora final na imagem original (para o DEBUG 3)
                 Imgproc.rectangle(imagem, new Point(melhorCaixa.x, melhorCaixa.y), 
-                                     new Point(melhorCaixa.x + melhorCaixa.width, melhorCaixa.y + melhorCaixa.height), 
-                                     COLOR_BLUE, 3);
+                                           new Point(melhorCaixa.x + melhorCaixa.width, melhorCaixa.y + melhorCaixa.height), 
+                                           COLOR_BLUE, 3);
+            } else {
+                 System.out.println("    ❌ Nenhuma âncora válida encontrada na região (" + regionName + ").");
             }
             
+            // Libera recursos locais
             regiao.release(); gray.release(); thresh.release(); hierarchy.release();
         }
         
         System.out.println("  🏁 Detecção de âncoras finalizada. Total: " + ancorasRects.size());
         if (ancorasRects.size() != 4) {
             System.err.println("  ⚠ ERRO FATAL: não foram encontradas 4 âncoras.");
+            // --- DEBUG 3: Salva a imagem final de falha com as âncoras encontradas (3, neste caso) ---
             Imgcodecs.imwrite(outputDir + OUTPUT_FAIL_PREFIX + folha + ".jpg", imagem);
             return null;
         }
 
+        // ----------------------------------------------------------------------
+        // 🚀 CORREÇÃO DA ORDENAÇÃO DE PONTOS
+        // A ordenação robusta garante que os pontos sejam passados para a transformação 
+        // na ordem correta (TL, TR, BL, BR), o que corrige o desalinhamento.
+        // ----------------------------------------------------------------------
         List<Point> srcPointsList = new ArrayList<>();
         for (Rect r : ancorasRects) {
+            // Adiciona o centro da âncora como o ponto de origem
             srcPointsList.add(new Point(r.x + r.width / 2.0, r.y + r.height / 2.0));
         }
+
+        // 1. Encontra TL (menor soma x+y) e BR (maior soma x+y)
         Collections.sort(srcPointsList, (p1, p2) -> Double.compare(p1.x + p1.y, p2.x + p2.y));
-        Point tl = srcPointsList.get(0);
-        Point br = srcPointsList.get(3);
+        Point tl = srcPointsList.get(0); // Top-Left
+        Point br = srcPointsList.get(3); // Bottom-Right
+
+        // 2. Separa os dois pontos restantes
         Point p2 = srcPointsList.get(1);
         Point p3 = srcPointsList.get(2);
+
         Point tr, bl;
-        if (p2.x > p3.x) { tr = p2; bl = p3; } else { tr = p3; bl = p2; }
+
+        // 3. Determina TR (Top-Right) e BL (Bottom-Left)
+        // TR tem a MAIOR diferença (x - y) e BL tem a MENOR diferença (x - y)
+        if ((p2.x - p2.y) > (p3.x - p3.y)) {
+            tr = p2;
+            bl = p3;
+        } else {
+            tr = p3;
+            bl = p2;
+        }
+
+        // 4. Cria o MatOfPoint2f na ordem correta: TL, TR, BL, BR
         MatOfPoint2f src_points = new MatOfPoint2f(tl, tr, bl, br);
+        // ----------------------------------------------------------------------
+
         MatOfPoint2f dst_points = template.idealPoints;
         Mat M = Imgproc.getPerspectiveTransform(src_points, dst_points);
         Mat warpedImage = new Mat();
