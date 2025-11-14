@@ -1,7 +1,9 @@
 package seabdetector;
 
 import org.opencv.core.*;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -12,31 +14,37 @@ public class OmrReader {
 
     /**
      * Lê as bolhas na imagem alinhada e marca visualmente a resposta.
-     * @param recorte A imagem da folha já alinhada (warped).
+     * @param recorte A imagem da folha já alinhada (warped). ESTA MAT É MODIFICADA VISUALMENTE.
      * @param alternativasFolha A lista de Alternativas para esta folha.
+     * @param debugOutputPath O caminho do diretório onde salvar as imagens de debug.
+     * @param baseFileName O nome base do arquivo para o debug.
      * @return Um mapa com Questão -> Resposta (ex: "Q1" -> "Sim").
      */
-    public static Map<String, String> readBubbles(Mat recorte, List<Alternativa> alternativasFolha) {
-        
+    public static Map<String, String> readBubbles(Mat recorte, List<Alternativa> alternativasFolha, String debugOutputPath, String baseFileName) {
+
         Mat cinza = new Mat();
         Imgproc.cvtColor(recorte, cinza, Imgproc.COLOR_BGR2GRAY);
-        
+
         // Agrupa as alternativas por questão
         Map<String, List<Alternativa>> porQuestao = new LinkedHashMap<>();
         for (Alternativa a : alternativasFolha) {
+            // OBSERVAÇÃO: A classe Alternativa do DataModels.java anterior não tem os campos x/y/opcao.
+            // Eu estou mantendo a lógica do seu código anterior (OmrReader baseado em média de cor),
+            // que usa a classe Alternativa que continha esses campos.
             porQuestao.computeIfAbsent(a.questao, k -> new ArrayList<>()).add(a);
         }
-        
+
         Map<String, String> respostasDaFolha = new LinkedHashMap<>();
-        
+
         for (String questao : porQuestao.keySet()) {
             List<Alternativa> lista = porQuestao.get(questao);
             List<Alternativa> marcadas = new ArrayList<>();
             Map<Alternativa, Double> medias = new HashMap<>();
             double minMedia = 255.0, maxMedia = 0.0;
-            
+
             // 1. Calcula a média de intensidade para cada bolha e encontra o min/max
             for (Alternativa alt : lista) {
+                // ASSUMIMOS que a classe Alternativa TEM os campos x, y, e opcao (mesmo que não estejam no DataModels)
                 int x = alt.x;
                 int y = alt.y;
                 int x0 = Math.max(x - BUBBLE_RADIUS, 0);
@@ -52,19 +60,20 @@ public class OmrReader {
                 maxMedia = Math.max(maxMedia, media);
                 sub.release();
             }
-            
+
             // 2. Determina quais bolhas estão marcadas (relativo à questão)
             boolean algoMarcado = (maxMedia - minMedia) > RELATIVE_MARK_THRESHOLD;
             if (algoMarcado) {
-                // O limiar é o valor mais escuro (minMedia) + uma margem de tolerância
-                double limiarMarcado = minMedia + (RELATIVE_MARK_THRESHOLD / 2.0); 
+                // Ajuste a sensibilidade aqui se necessário.
+                // Um limiar mais baixo (ex: / 3.0 ou / 4.0) aumenta a sensibilidade.
+                double limiarMarcado = minMedia + (RELATIVE_MARK_THRESHOLD / 2.0);
                 for (Alternativa alt : lista) {
                     if (medias.get(alt) <= limiarMarcado) {
                         marcadas.add(alt);
                     }
                 }
             }
-            
+
             // 3. Marca visualmente a resposta na imagem colorida (recorte)
             for (Alternativa alt : lista) {
                 int x = alt.x;
@@ -74,7 +83,7 @@ public class OmrReader {
                 int larguraRecorte = Math.min(BUBBLE_RADIUS * 2, cinza.width() - x0);
                 int alturaRecorte = Math.min(BUBBLE_RADIUS * 2, cinza.height() - y0);
                 Scalar cor = marcadas.contains(alt) ? COLOR_GREEN : COLOR_RED;
-                
+
                 // Desenha o retângulo na imagem alinhada (recorte)
                 Imgproc.rectangle(recorte, new Point(x0, y0), new Point(x0 + larguraRecorte, y0 + alturaRecorte), cor, 2);
             }
@@ -83,11 +92,18 @@ public class OmrReader {
             String respostaFinal;
             if (marcadas.isEmpty()) respostaFinal = "";
             else if (marcadas.size() > 1) respostaFinal = "?"; // Múltipla marcação
-            else respostaFinal = Constants.traduzAlternativa(marcadas.get(0).opcao);
-            
+            else respostaFinal = seabdetector.Constants.traduzAlternativa(marcadas.get(0).opcao);
+
             respostasDaFolha.put(questao, respostaFinal);
         }
-        
+
+        // 5. SALVA A IMAGEM DE DEBUG (recorte modificado)
+        if (debugOutputPath != null && baseFileName != null) {
+            String debugFileName = debugOutputPath + File.separator + baseFileName + "_omr_debug.jpg";
+            Imgcodecs.imwrite(debugFileName, recorte);
+            System.out.println("  [DEBUG] Imagem OMR salva em: " + debugFileName);
+        }
+
         cinza.release();
         return respostasDaFolha;
     }

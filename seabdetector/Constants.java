@@ -5,7 +5,7 @@ import java.io.File;
 
 public class Constants {
     
-    public static final String OPENCV_DLL_PATH = System.getProperty("opencv.dll.path", "C:\\Users\\jasom\\opencv\\build\\java\\x64\\opencv_java4120.dll");
+    public static final String OPENCV_DLL_PATH = System.getProperty("opencv.dll.path", "C:\\Users\\Jasom\\Desktop\\gits\\Leitor-de-gabaritos\\lib\\opencv_java4100.dll");
     public static final String S = File.separator;
     
     // --- Caminhos de Arquivo ---
