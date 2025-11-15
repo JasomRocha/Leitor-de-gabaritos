@@ -2,7 +2,7 @@ package seabdetector;
 
 import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
-import org.opencv.imgproc.Imgproc;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;

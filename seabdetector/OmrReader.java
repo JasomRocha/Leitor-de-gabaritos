@@ -1,11 +1,8 @@
 package seabdetector;
 
 import org.opencv.core.*;
-import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
-import java.io.File;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static seabdetector.Constants.*;
 import static seabdetector.DataModels.Alternativa;

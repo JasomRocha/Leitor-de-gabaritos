@@ -133,7 +133,7 @@ public class QRCodeReader {
          // Chamamos a nova lógica unificada.
          return extractAndParseFromRawImage(warpedImage, debugOutputPath, baseFileName);
     }
-    // ... (parseQrCode) ...
+  
     private static QrData parseQrCode(String qrTexto) {
         if (qrTexto == null || qrTexto.length() < 16) {
             System.err.println("  ⚠ Erro de QR Code: texto é nulo ou curto. ('" + qrTexto + "')");
