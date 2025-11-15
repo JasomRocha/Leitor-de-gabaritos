@@ -132,10 +132,10 @@ public class AnchorDetector {
                     contorno.release(); contorno2f.release(); aprox.release();
                 }
                 
-                // Imgcodecs.imwrite(outputDir + "DEBUG_ANCHOR_ALL_CONTOURS_" + regionName.replace(" ", "_") + "_" + nomeArquivoBase + ".jpg", debugContornos);
+                //Imgcodecs.imwrite(outputDir + "DEBUG_ANCHOR_ALL_CONTOURS_" + regionName.replace(" ", "_") + "_" + nomeArquivoBase + ".jpg", debugContornos);
 
                 if (melhorCaixa != null) {
-                    System.out.println("    ✅ Encontrada âncora (" + regionName + ")! Área: " + String.format("%.1f", maxAreaEncontrada));
+                    //System.out.println("    ✅ Encontrada âncora (" + regionName + ")! Área: " + String.format("%.1f", maxAreaEncontrada));
                     ancorasRects.add(melhorCaixa);
                     // Desenha a âncora na imagem original para o DEBUG de falha
                     Imgproc.rectangle(imagem, new Point(melhorCaixa.x, melhorCaixa.y), 
@@ -155,7 +155,7 @@ public class AnchorDetector {
         
         if (ancorasRects.size() != 4) {
             System.err.println("  ⚠ ERRO FATAL: não foram encontradas 4 âncoras. Não é possível alinhar.");
-            Imgcodecs.imwrite(outputDir + OUTPUT_FAIL_PREFIX + nomeArquivoBase + ".jpg", imagem);
+            //Imgcodecs.imwrite(outputDir + OUTPUT_FAIL_PREFIX + nomeArquivoBase + ".jpg", imagem);
             return null;
         }
 
@@ -188,7 +188,7 @@ public class AnchorDetector {
         String prefix = isInitialWarp ? OUTPUT_CROP_PREFIX : OUTPUT_IMAGE_PREFIX;
         //Imgcodecs.imwrite(outputDir + prefix + folha.replace(" ", "") + ".jpg", warpedImage);
         
-        System.out.println("  ✓ Imagem alinhada e salva. (Warp Inicial: " + isInitialWarp + ")");
+        //System.out.println("  ✓ Imagem alinhada e salva. (Warp Inicial: " + isInitialWarp + ")");
         
         src_points.release();
         M.release();

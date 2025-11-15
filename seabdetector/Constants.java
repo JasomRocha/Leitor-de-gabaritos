@@ -6,6 +6,7 @@ import java.io.File;
 public class Constants {
     
     public static final String OPENCV_DLL_PATH = System.getProperty("opencv.dll.path", "C:\\Users\\Jasom\\Desktop\\gits\\Leitor-de-gabaritos\\lib\\opencv_java4100.dll");
+    public static final String OPENCV_DLL_PATH_HOME = System.getProperty("opencv.dll.path", "C:\\Users\\jasom\\OneDrive\\Documentos\\NetBeansProjects\\SeabDetector\\src\\lib\\opencv_java4120.dll");
     public static final String S = File.separator;
     
     // --- Caminhos de Arquivo ---
@@ -19,10 +20,10 @@ public class Constants {
     public static final String OUTPUT_CROP_PREFIX = "recorte_";
     
     // --- Parâmetros de Detecção de Âncora ---
-    public static final int ANCHOR_SEARCH_SIZE = 100;
-    public static final double ANCHOR_MIN_AREA = 320.0;
-    public static final double ANCHOR_MAX_AREA = 5000.0;
-    public static final double ANCHOR_APPROX_EPSILON = 0.06;
+    public static final int ANCHOR_SEARCH_SIZE = 120;
+    public static final double ANCHOR_MIN_AREA = 300.0;
+    public static final double ANCHOR_MAX_AREA = 500.0;
+    public static final double ANCHOR_APPROX_EPSILON = 0.08;
     public static final int ADAPTIVE_THRESH_BLOCK_SIZE = 15;
     public static final int ADAPTIVE_THRESH_C = 10;
     public static final double ANCHOR_ASPECT_TOLERANCE = 1.2;
